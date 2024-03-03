@@ -1,5 +1,10 @@
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+using Core.Entities;
+using Core.Interfaces;
+using Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
+
+// In your Program.cs
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -10,6 +15,34 @@ builder.Services.AddSpaStaticFiles(configuration =>
 });
 
 var app = builder.Build();
+var connection = String.Empty;
+if (builder.Environment.IsDevelopment())
+{
+    builder.Configuration.AddEnvironmentVariables().AddJsonFile("appsettings.Development.json");
+    connection = builder.Configuration.GetConnectionString("AZURE_SQL_CONNECTIONSTRING");
+}
+else
+{
+    connection = Environment.GetEnvironmentVariable("AZURE_SQL_CONNECTIONSTRING");
+}
+
+builder.Services.AddDbContext<FlashCatStorage>(options => options.UseSqlServer(connection));
+
+// app.MapGet("/User", (FlashCatStorage context) =>
+// {
+//     return context.Users.ToList();
+// })
+// .WithName("GetUsers")
+// .WithOpenApi();
+
+// app.MapPost("/User", (User user, FlashCatStorage context) =>
+// {
+//     context.Add(user);
+//     context.SaveChanges();
+// })
+// .WithName("CreateUser")
+// .WithOpenApi();
+
 app.UseSpaStaticFiles();
 app.UseSpa(spa =>
 {
@@ -24,17 +57,12 @@ app.UseSpa(spa =>
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
-
 app.MapRazorPages();
-
 app.Run();
